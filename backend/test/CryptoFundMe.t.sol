@@ -141,6 +141,7 @@ contract CryptoFundMeTest is Test {
     ) external {
         vm.assume(deadline > block.timestamp);
         vm.assume(targetAmount > 0);
+        vm.assume(donationAmount > 0);
 
         uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
         UD60x18 feeAmount = cryptoFundMe.calculateFee(ud(donationAmount));
@@ -153,6 +154,24 @@ contract CryptoFundMeTest is Test {
         (,,,, uint256 amountCollected,,,) = cryptoFundMe.campaigns(campaignId);
 
         assertEq(netDonationAmount, amountCollected, "Campaign's amount collected did not increase as expected");
+    }
+
+    function testDonateEtherToCampaignRevertWhenNoEtherSent(
+        string memory title,
+        string memory description,
+        uint256 targetAmount,
+        uint256 deadline,
+        string memory image
+    ) external {
+        vm.assume(deadline > block.timestamp);
+        vm.assume(targetAmount > 0);
+
+        uint256 donationAmount = 0;
+        uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
+
+        vm.expectRevert("No Ether sent for donation");
+
+        cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
     }
 
     function testDonateERC20ToCampaign(

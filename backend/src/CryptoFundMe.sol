@@ -143,7 +143,7 @@ contract CryptoFundMe {
      * @param _id The ID of the campaign to donate to
      */
     function donateEtherToCampaign(uint256 _id) external payable campaignIsActive(_id) {
-        require(campaigns[_id].acceptedToken == ETHER_ADDRESS, "This campaign does not accept Ether donations");
+        require(msg.value > 0, "No Ether sent for donation");
 
         UD60x18 donationAmount = ud(msg.value);
         Campaign storage campaign = campaigns[_id];
