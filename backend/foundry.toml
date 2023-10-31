@@ -4,6 +4,8 @@ out = 'out'
 libs = ['lib']
 remappings = [
     '@thirdweb-dev/=node_modules/@thirdweb-dev/',
+    '@prb/math/=lib/prb-math/src/',
+    '@openzeppelin/=lib/openzeppelin-contracts/'
 ]
 solc='/opt/homebrew/bin/solc'
 

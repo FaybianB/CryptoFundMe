@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { UD60x18, ud, unwrap } from "@prb/math/UD60x18.sol";
 
 /**
  * @title CryptoFundMe
@@ -33,11 +34,12 @@ contract CryptoFundMe {
     uint256 public numberOfCampaigns = 0;
     // Represents 0.1 ETH or 10^17 WEI
     uint256 public CHANGE_FEE = 100_000_000_000_000_000;
+
     // Represents a 5% fee on donations
-    uint256 public DONATION_PERCENTAGE_FEE = 5;
+    UD60x18 public DONATION_PERCENTAGE_FEE = ud(0.05e18);
 
     address public constant ETHER_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address payable owner;
+    address owner;
     address payable feeTo;
 
     /**
@@ -58,6 +60,19 @@ contract CryptoFundMe {
     event DeadlineCanged(address indexed creator, uint256 indexed campaignId, string reason);
 
     event TargetAmountCanged(address indexed creator, uint256 indexed campaignId, string reason);
+
+    modifier campaignIsActive(uint256 _id) {
+        require(campaigns[_id].deadline > block.timestamp, "The campign has ended");
+        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campign has reached it's goal");
+
+        _;
+    }
+
+    modifier onlyCreator(uint256 _id) {
+        require(campaigns[_id].creator == msg.sender, "Only campaign creator can execute this action");
+
+        _;
+    }
 
     constructor() {
         owner = msg.sender;
@@ -102,8 +117,8 @@ contract CryptoFundMe {
         uint256 _deadline,
         string memory _image
     ) public returns (uint256 campaignId) {
-        require(_deadline > block.timestamp, "The deadline should be a date in the future.");
-        require(_targetAmount > 0, "The target amount should be greater than 0.");
+        require(_deadline > block.timestamp, "The deadline should be a date in the future");
+        require(_targetAmount > 0, "The target amount should be greater than 0");
 
         Campaign memory campaign = Campaign({
             creator: msg.sender,
@@ -127,24 +142,26 @@ contract CryptoFundMe {
     /**
      * @param _id The ID of the campaign to donate to
      */
-    function donateEtherToCampaign(uint256 _id) external payable {
-        require(campaigns[_id].acceptedToken == ETHER_ADDRESS, "This campaign does not accept Ether donations.");
-        require(campaigns[_id].deadline > block.timestamp, "The campign has ended.");
-        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campign has reached it's goal.");
+    function donateEtherToCampaign(uint256 _id) external payable campaignIsActive(_id) {
+        require(campaigns[_id].acceptedToken == ETHER_ADDRESS, "This campaign does not accept Ether donations");
 
-        uint256 amount = msg.value;
+        UD60x18 donationAmount = ud(msg.value);
         Campaign storage campaign = campaigns[_id];
+        UD60x18 feeAmount = calculateFee(donationAmount);
+        uint256 netDonationAmount = unwrap(donationAmount.sub(feeAmount));
 
-        calculateFee(amount);
+        donations[_id].push(Donation({ donator: msg.sender, donationAmount: netDonationAmount }));
 
-        donations[_id].push(Donation({ donator: msg.sender, donationAmount: amount }));
+        campaign.amountCollected = campaign.amountCollected + netDonationAmount;
+        (bool feeSent,) = feeTo.call{ value: unwrap(feeAmount) }("");
 
-        campaign.amountCollected = campaign.amountCollected + amount;
-        (bool sent,) = payable(campaign.creator).call{ value: amount }("");
+        require(feeSent, "Failed to send fee");
 
-        require(sent, "Failed to send donation to campaign owner");
+        (bool donationSent,) = payable(campaign.creator).call{ value: netDonationAmount }("");
 
-        emit Donated(msg.sender, _id, amount);
+        require(donationSent, "Failed to send donation to campaign creator");
+
+        emit Donated(msg.sender, _id, netDonationAmount);
     }
 
     /**
@@ -152,22 +169,24 @@ contract CryptoFundMe {
      * @param _token The address of the token being donated
      * @param _amount The amount to donate
      */
-    function donateERC20ToCampaign(uint256 _id, IERC20 _token, uint256 _amount) external {
+    function donateERC20ToCampaign(uint256 _id, IERC20 _token, uint256 _amount) external campaignIsActive(_id) {
         require(
-            campaigns[_id].acceptedToken == address(_token), "This campaign does not accept donations of this token."
+            campaigns[_id].acceptedToken == address(_token), "This campaign does not accept donations of this token"
         );
-        require(campaigns[_id].deadline > block.timestamp, "The campign has ended.");
-        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campign has reached it's goal.");
 
+        UD60x18 donationAmount = ud(_amount);
+        UD60x18 feeAmount = calculateFee(donationAmount);
+        uint256 netDonationAmount = unwrap(donationAmount.sub(feeAmount));
         Campaign storage campaign = campaigns[_id];
 
-        donations[_id].push(Donation({ donator: msg.sender, donationAmount: _amount }));
+        donations[_id].push(Donation({ donator: msg.sender, donationAmount: netDonationAmount }));
 
-        campaign.amountCollected = campaign.amountCollected + _amount;
+        campaign.amountCollected = campaign.amountCollected + netDonationAmount;
 
-        _token.safeTransferFrom(msg.sender, campaign.creator, _amount);
+        _token.safeTransferFrom(msg.sender, feeTo, unwrap(feeAmount));
+        _token.safeTransferFrom(msg.sender, campaign.creator, netDonationAmount);
 
-        emit Donated(msg.sender, _id, _amount);
+        emit Donated(msg.sender, _id, netDonationAmount);
     }
 
     /**
@@ -194,11 +213,13 @@ contract CryptoFundMe {
         return allCampaigns;
     }
 
-    function changeDeadline(uint256 _id, uint256 _newDeadline, string memory _reason) external payable {
-        require(campaigns[_id].creator == msg.sender, "Only campaign creator can end the campaign.");
-        require(campaigns[_id].deadline > block.timestamp, "The campign has ended.");
-        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campign has reached it's goal.");
-        require(msg.value == CHANGE_FEE, "Incorrect change fee amount sent.");
+    function changeDeadline(uint256 _id, uint256 _newDeadline, string memory _reason)
+        external
+        payable
+        campaignIsActive(_id)
+        onlyCreator(_id)
+    {
+        require(msg.value == CHANGE_FEE, "Incorrect change fee amount sent");
 
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
@@ -209,11 +230,13 @@ contract CryptoFundMe {
         emit DeadlineCanged(msg.sender, _id, _reason);
     }
 
-    function changeTargetAmount(uint256 _id, uint256 _newTargetAmount, string memory _reason) external payable {
-        require(campaigns[_id].creator == msg.sender, "Only campaign creator can change target amount.");
-        require(campaigns[_id].deadline > block.timestamp, "The campign has ended.");
-        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campign has reached it's goal.");
-        require(msg.value == CHANGE_FEE, "Incorrect change fee amount sent.");
+    function changeTargetAmount(uint256 _id, uint256 _newTargetAmount, string memory _reason)
+        external
+        payable
+        campaignIsActive(_id)
+        onlyCreator(_id)
+    {
+        require(msg.value == CHANGE_FEE, "Incorrect change fee amount sent");
 
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
@@ -224,11 +247,13 @@ contract CryptoFundMe {
         emit TargetAmountCanged(msg.sender, _id, _reason);
     }
 
-    function setFeeTo(address _feeTo) external {
-        require(owner == msg.sender, "Only owner can set the fee to address.");
+    function setFeeTo(address _feeTo) public {
+        require(owner == msg.sender, "Only owner can set the fee to address");
 
-        feeTo = _feeTo;
+        feeTo = payable(_feeTo);
     }
 
-    function calculateFee(uint256 donationAmount) private { }
+    function calculateFee(UD60x18 donationAmount) public view returns (UD60x18 feeAmount) {
+        feeAmount = donationAmount.mul(DONATION_PERCENTAGE_FEE);
+    }
 }
