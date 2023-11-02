@@ -262,7 +262,7 @@ contract CryptoFundMe {
 
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
-        require(sent, "Failed to send fee.");
+        require(sent, "Failed to send fee");
 
         campaigns[_id].deadline = _newDeadline;
 
@@ -285,7 +285,7 @@ contract CryptoFundMe {
 
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
-        require(sent, "Failed to send fee.");
+        require(sent, "Failed to send fee");
 
         campaigns[_id].targetAmount = _newTargetAmount;
 

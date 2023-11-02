@@ -18,6 +18,8 @@ contract CryptoFundMeTestHarness is Test {
     }
 
     function testSetFeeToRevertWhenNotOwner(address newFeeTo, address notOwner) external {
+        vm.assume(notOwner != address(this));
+
         vm.prank(notOwner);
 
         vm.expectRevert("Only owner can set the fee to address");
