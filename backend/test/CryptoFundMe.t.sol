@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 import { CryptoFundMe, CampaignCreated, Donated, DeadlineChanged, TargetAmountChanged } from "../src/CryptoFundMe.sol";
 import { UD60x18, ud, unwrap } from "@prb/math/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -252,8 +253,13 @@ contract CryptoFundMeTest is Test {
         string memory image,
         uint256 donationAmount
     ) external {
-        targetAmount = bound(targetAmount, 1, type(uint256).max / 3);
-        donationAmount = bound(donationAmount, targetAmount * 2, type(uint256).max - 1);
+        targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
+        // Equivalent to 100 with 18 decimal places
+        UD60x18 oneHundred = ud(100e18);
+        // Equivalent to 95 with 18 decimal places
+        UD60x18 ninetyFive = ud(95e18);
+        donationAmount =
+            bound(donationAmount, unwrap(ud(targetAmount).mul(oneHundred).div(ninetyFive)), type(uint256).max - 1);
 
         vm.assume(deadline > block.timestamp);
 
@@ -441,10 +447,15 @@ contract CryptoFundMeTest is Test {
         string memory image,
         uint256 donationAmount
     ) external {
-        targetAmount = bound(targetAmount, 1, type(uint256).max / 3);
+        targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
+        // Equivalent to 100 with 18 decimal places
+        UD60x18 oneHundred = ud(100e18);
+        // Equivalent to 95 with 18 decimal places
+        UD60x18 ninetyFive = ud(95e18);
+        donationAmount =
+            bound(donationAmount, unwrap(ud(targetAmount).mul(oneHundred).div(ninetyFive)), type(uint256).max - 1);
 
         vm.assume(deadline > block.timestamp);
-        vm.assume(donationAmount > targetAmount * 2);
 
         uint256 campaignId =
             cryptoFundMe.createCampaign(address(erc20Mock), title, description, targetAmount, deadline, image);
@@ -628,7 +639,7 @@ contract CryptoFundMeTest is Test {
 
         vm.deal(address(this), changeFee);
 
-        vm.warp(deadline + 1);
+        vm.warp(deadline);
 
         vm.expectRevert("The campaign has ended");
 
@@ -648,9 +659,10 @@ contract CryptoFundMeTest is Test {
         vm.assume(deadline > block.timestamp);
 
         uint256 changeFee = cryptoFundMe.changeFee();
-        targetAmount = bound(targetAmount, 1, type(uint256).max / 3);
+        targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
         deadline = bound(deadline, block.timestamp + 1, type(uint256).max - 1);
-        donationAmount = bound(donationAmount, targetAmount * 2, type(uint256).max - 1 - changeFee);
+        donationAmount =
+            bound(donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max - 1 - changeFee);
         uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
 
         vm.deal(address(this), donationAmount + changeFee);
@@ -763,6 +775,30 @@ contract CryptoFundMeTest is Test {
         assertEq(updatedTargetAmount, newTargetAmount, "The campaign's target amount was not changed as expected");
     }
 
+    function testChangeTargetAmountRevertWhenDeadlinePassed(
+        string memory title,
+        string memory description,
+        uint256 targetAmount,
+        uint256 deadline,
+        string memory image,
+        uint256 newTargetAmount,
+        string memory reason
+    ) external {
+        vm.assume(targetAmount > 0);
+
+        deadline = bound(deadline, block.timestamp + 1, type(uint256).max - 1);
+        uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
+        uint256 changeFee = cryptoFundMe.changeFee();
+
+        vm.deal(address(this), changeFee);
+
+        vm.warp(deadline);
+
+        vm.expectRevert("The campaign has ended");
+
+        cryptoFundMe.changeTargetAmount{ value: changeFee }(campaignId, newTargetAmount, reason);
+    }
+
     function testChangeTargetAmountRevertWhenTargetAmountReached(
         string memory title,
         string memory description,
@@ -776,9 +812,11 @@ contract CryptoFundMeTest is Test {
         vm.assume(deadline > block.timestamp);
 
         uint256 changeFee = cryptoFundMe.changeFee();
-        targetAmount = bound(targetAmount, 1, type(uint256).max / 3);
+        targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
         deadline = bound(deadline, block.timestamp + 1, type(uint256).max - 1);
-        donationAmount = bound(donationAmount, targetAmount * 2, type(uint256).max - 1 - changeFee);
+        donationAmount = bound(
+            donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max - 1 - changeFee
+        );
         uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
 
         vm.deal(address(this), donationAmount + changeFee);

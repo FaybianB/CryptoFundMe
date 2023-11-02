@@ -318,6 +318,6 @@ contract CryptoFundMe {
      * @return feeAmount The fee for the donation
      */
     function calculateFee(UD60x18 donationAmount) public view returns (UD60x18 feeAmount) {
-        feeAmount = donationAmount.mul(DONATION_PERCENTAGE_FEE);
+        return donationAmount.mul(DONATION_PERCENTAGE_FEE);
     }
 }
