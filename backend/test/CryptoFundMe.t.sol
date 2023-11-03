@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
+import { Test } from "forge-std/Test.sol";
 import { CryptoFundMe, CampaignCreated, Donated, DeadlineChanged, TargetAmountChanged } from "../src/CryptoFundMe.sol";
 import { UD60x18, ud, unwrap } from "@prb/math/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
