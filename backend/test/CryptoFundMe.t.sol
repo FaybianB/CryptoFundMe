@@ -236,7 +236,7 @@ contract CryptoFundMeTest is Test {
 
         startHoax(DONATOR, donationAmount);
 
-        vm.warp(deadline + 1);
+        vm.warp(deadline);
 
         vm.expectRevert("The campaign has ended");
 
@@ -254,12 +254,8 @@ contract CryptoFundMeTest is Test {
         uint256 donationAmount
     ) external {
         targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
-        // Equivalent to 100 with 18 decimal places
-        UD60x18 oneHundred = ud(100e18);
-        // Equivalent to 95 with 18 decimal places
-        UD60x18 ninetyFive = ud(95e18);
         donationAmount =
-            bound(donationAmount, unwrap(ud(targetAmount).mul(oneHundred).div(ninetyFive)), type(uint256).max - 1);
+            bound(donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max - 1);
 
         vm.assume(deadline > block.timestamp);
 
@@ -332,7 +328,8 @@ contract CryptoFundMeTest is Test {
         uint256 targetAmount,
         uint256 deadline,
         string memory image,
-        uint256 donationAmount
+        uint256 donationAmount,
+        bool coverFee
     ) external {
         vm.assume(deadline > block.timestamp);
         vm.assume(targetAmount > 0);
@@ -340,7 +337,10 @@ contract CryptoFundMeTest is Test {
         uint256 campaignId =
             cryptoFundMe.createCampaign(address(erc20Mock), title, description, targetAmount, deadline, image);
         UD60x18 feeAmount = cryptoFundMe.calculateFee(ud(donationAmount));
-        uint256 netDonationAmount = unwrap(ud(donationAmount).sub(feeAmount));
+
+        vm.assume(donationAmount < unwrap(ud(type(uint256).max).sub(feeAmount)));
+
+        uint256 netDonationAmount = coverFee ? donationAmount : unwrap(ud(donationAmount).sub(feeAmount));
         (address creator,,,,,,,) = cryptoFundMe.campaigns(campaignId);
         uint256 donatorBalanceBefore = erc20Mock.balanceOf(DONATOR);
         uint256 creatorBalanceBefore = erc20Mock.balanceOf(creator);
@@ -348,7 +348,11 @@ contract CryptoFundMeTest is Test {
 
         vm.startPrank(DONATOR);
 
-        erc20Mock.approve(address(cryptoFundMe), donationAmount);
+        {
+            uint256 approvalAmount = coverFee ? unwrap(ud(donationAmount).add(feeAmount)) : donationAmount;
+
+            erc20Mock.approve(address(cryptoFundMe), approvalAmount);
+        }
 
         vm.expectEmit(true, true, true, true);
 
@@ -362,7 +366,7 @@ contract CryptoFundMeTest is Test {
 
         emit Donated(DONATOR, campaignId, netDonationAmount);
 
-        uint256 donationId = cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount);
+        uint256 donationId = cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
 
         vm.stopPrank();
 
@@ -370,29 +374,72 @@ contract CryptoFundMeTest is Test {
 
         assertEq(netDonationAmount, amountCollected, "Campaign's amount collected did not increase as expected");
 
-        uint256 donatorBalanceAfter = erc20Mock.balanceOf(DONATOR);
-        uint256 creatorBalanceAfter = erc20Mock.balanceOf(creator);
-        uint256 feeToBalanceAfter = erc20Mock.balanceOf(FEE_TO);
+        {
+            uint256 donatorBalanceAfter = erc20Mock.balanceOf(DONATOR);
+            uint256 creatorBalanceAfter = erc20Mock.balanceOf(creator);
+            uint256 feeToBalanceAfter = erc20Mock.balanceOf(FEE_TO);
+            uint256 expectedDonatorBalance = coverFee
+                ? donatorBalanceBefore - donationAmount - unwrap(feeAmount)
+                : donatorBalanceBefore - donationAmount;
 
-        assertEq(
-            donatorBalanceAfter, donatorBalanceBefore - donationAmount, "Donator's balance did not decrease as expected"
-        );
-        assertEq(
-            creatorBalanceAfter,
-            creatorBalanceBefore + netDonationAmount,
-            "Creator's balance did not increase as expected"
-        );
-        assertEq(
-            feeToBalanceAfter,
-            feeToBalanceBefore + unwrap(feeAmount),
-            "Fee receiver's balance did not increase as expected"
-        );
+            assertEq(donatorBalanceAfter, expectedDonatorBalance, "Donator's balance did not decrease as expected");
+            assertEq(
+                creatorBalanceAfter,
+                creatorBalanceBefore + netDonationAmount,
+                "Creator's balance did not increase as expected"
+            );
+            assertEq(
+                feeToBalanceAfter,
+                feeToBalanceBefore + unwrap(feeAmount),
+                "Fee receiver's balance did not increase as expected"
+            );
+        }
 
         (address donator, uint256 amountDonated) = cryptoFundMe.donations(campaignId, donationId);
 
-        // Assert that the storage variables update correctly
         assertEq(donator, DONATOR, "Donator was not stored correctly");
         assertEq(amountDonated, netDonationAmount, "Donation amount was not stored correctly");
+    }
+
+    function testDonateERC20ToCampaignCoverFees(
+        string memory title,
+        string memory description,
+        uint256 targetAmount,
+        uint256 deadline,
+        string memory image,
+        uint256 donationAmount,
+        bool coverFee
+    ) external {
+        vm.assume(deadline > block.timestamp);
+        vm.assume(targetAmount > 0);
+
+        uint256 campaignId =
+            cryptoFundMe.createCampaign(address(erc20Mock), title, description, targetAmount, deadline, image);
+        UD60x18 feeAmount = cryptoFundMe.calculateFee(ud(donationAmount));
+
+        vm.assume(donationAmount < unwrap(ud(type(uint256).max).sub(feeAmount)));
+
+        (address creator,,,,,,,) = cryptoFundMe.campaigns(campaignId);
+        uint256 donatorBalanceBefore = erc20Mock.balanceOf(DONATOR);
+
+        vm.startPrank(DONATOR);
+
+        uint256 approvalAmount = coverFee ? unwrap(ud(donationAmount).add(feeAmount)) : donationAmount;
+
+        erc20Mock.approve(address(cryptoFundMe), approvalAmount);
+
+        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
+
+        vm.stopPrank();
+
+        uint256 creatorBalanceAfter = erc20Mock.balanceOf(creator);
+        coverFee ? donatorBalanceBefore - donationAmount - unwrap(feeAmount) : donatorBalanceBefore - donationAmount;
+        uint256 expectedCreatorBalance = coverFee ? donationAmount : unwrap(ud(donationAmount).sub(feeAmount));
+        string memory coverFeeError = coverFee
+            ? "Creator's balance did not increase as expected after fees were covered"
+            : "Creator's balance did not increase as expected after fees were not covered";
+
+        assertEq(creatorBalanceAfter, expectedCreatorBalance, coverFeeError);
     }
 
     function testDonateERC20ToCampaignRevertWhenUnacceptableToken(
@@ -402,7 +449,8 @@ contract CryptoFundMeTest is Test {
         uint256 targetAmount,
         uint256 deadline,
         string memory image,
-        uint256 donationAmount
+        uint256 donationAmount,
+        bool coverFee
     ) external {
         vm.assume(tokenAddress != address(erc20Mock));
         vm.assume(deadline > block.timestamp);
@@ -414,7 +462,7 @@ contract CryptoFundMeTest is Test {
 
         vm.expectRevert("This campaign does not accept donations of this token");
 
-        cryptoFundMe.donateERC20ToCampaign(campaignId, IERC20(tokenAddress), donationAmount);
+        cryptoFundMe.donateERC20ToCampaign(campaignId, IERC20(tokenAddress), donationAmount, coverFee);
     }
 
     function testDonateERC20ToCampaignRevertWhenCampaignDeadlinePassed(
@@ -423,7 +471,8 @@ contract CryptoFundMeTest is Test {
         uint256 targetAmount,
         uint256 deadline,
         string memory image,
-        uint256 donationAmount
+        uint256 donationAmount,
+        bool coverFee
     ) external {
         vm.assume(targetAmount > 0);
         vm.assume(donationAmount > 0);
@@ -432,11 +481,11 @@ contract CryptoFundMeTest is Test {
         uint256 campaignId =
             cryptoFundMe.createCampaign(address(erc20Mock), title, description, targetAmount, deadline, image);
 
-        vm.warp(deadline + 1);
+        vm.warp(deadline);
 
         vm.expectRevert("The campaign has ended");
 
-        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount);
+        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
     }
 
     function testDonateERC20ToCampaignRevertWhenTargetAmountReached(
@@ -445,15 +494,13 @@ contract CryptoFundMeTest is Test {
         uint256 targetAmount,
         uint256 deadline,
         string memory image,
-        uint256 donationAmount
+        uint256 donationAmount,
+        bool coverFee
     ) external {
         targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
-        // Equivalent to 100 with 18 decimal places
-        UD60x18 oneHundred = ud(100e18);
-        // Equivalent to 95 with 18 decimal places
-        UD60x18 ninetyFive = ud(95e18);
         donationAmount =
-            bound(donationAmount, unwrap(ud(targetAmount).mul(oneHundred).div(ninetyFive)), type(uint256).max - 1);
+            bound(donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max / 2);
+        UD60x18 feeAmount = cryptoFundMe.calculateFee(ud(donationAmount));
 
         vm.assume(deadline > block.timestamp);
 
@@ -462,13 +509,15 @@ contract CryptoFundMeTest is Test {
 
         vm.startPrank(DONATOR);
 
-        erc20Mock.approve(address(cryptoFundMe), donationAmount);
+        uint256 approvalAmount = coverFee ? unwrap(ud(donationAmount).add(feeAmount)) : donationAmount;
 
-        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount);
+        erc20Mock.approve(address(cryptoFundMe), approvalAmount);
+
+        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
 
         vm.expectRevert("The campaign has reached it's goal");
 
-        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, 1);
+        cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, 1, coverFee);
 
         vm.stopPrank();
     }
@@ -661,8 +710,9 @@ contract CryptoFundMeTest is Test {
         uint256 changeFee = cryptoFundMe.changeFee();
         targetAmount = bound(targetAmount, 1, type(uint256).max / 100);
         deadline = bound(deadline, block.timestamp + 1, type(uint256).max - 1);
-        donationAmount =
-            bound(donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max - 1 - changeFee);
+        donationAmount = bound(
+            donationAmount, unwrap(ud(targetAmount).mul(ud(100e18)).div(ud(95e18))), type(uint256).max - 1 - changeFee
+        );
         uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
 
         vm.deal(address(this), donationAmount + changeFee);

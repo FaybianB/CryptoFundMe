@@ -198,7 +198,7 @@ contract CryptoFundMe {
      * @param _amount The amount to donate
      * @return donationId The ID of the donation
      */
-    function donateERC20ToCampaign(uint256 _id, IERC20 _token, uint256 _amount)
+    function donateERC20ToCampaign(uint256 _id, IERC20 _token, uint256 _amount, bool coverFee)
         external
         campaignIsActive(_id)
         returns (uint256 donationId)
@@ -209,7 +209,7 @@ contract CryptoFundMe {
 
         UD60x18 donationAmount = ud(_amount);
         UD60x18 feeAmount = calculateFee(donationAmount);
-        uint256 netDonationAmount = unwrap(donationAmount.sub(feeAmount));
+        uint256 netDonationAmount = coverFee ? unwrap(donationAmount) : unwrap(donationAmount.sub(feeAmount));
         Campaign storage campaign = campaigns[_id];
 
         donations[_id].push(Donation({ donator: msg.sender, donationAmount: netDonationAmount }));
@@ -294,22 +294,22 @@ contract CryptoFundMe {
 
     /**
      * @dev Function to set the change fee
-     * @param newChangeFee The new change fee
+     * @param _changeFee The new change fee
      */
-    function setChangeFee(uint256 newChangeFee) external {
+    function setChangeFee(uint256 _changeFee) external {
         require(owner == msg.sender, "Only owner can set the fee to address");
 
-        changeFee = newChangeFee;
+        changeFee = _changeFee;
     }
 
     /**
      * @dev Function to set the fee recipient
-     * @param newFeeTo The new fee recipient
+     * @param _feeTo The new fee recipient
      */
-    function setFeeTo(address newFeeTo) external {
+    function setFeeTo(address _feeTo) external {
         require(owner == msg.sender, "Only owner can set the fee to address");
 
-        feeTo = payable(newFeeTo);
+        feeTo = payable(_feeTo);
     }
 
     /**
