@@ -16,7 +16,8 @@ import {
     UnacceptableToken,
     DeadlineNotInFuture,
     InvalidTargetAmount,
-    DonationFailed
+    DonationFailed,
+    CampaignRemoved
 } from "../src/CryptoFundMe.sol";
 import { UD60x18, ud, unwrap } from "@prb/math/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -75,13 +76,13 @@ contract CryptoFundMeTest is Test {
             string memory _image
         ) = cryptoFundMe.campaigns(campaignId);
 
-        assertEq(_creator, address(this), "The campaign's owner was set as expected");
+        assertEq(_creator, address(this), "The campaign's owner was not set as expected");
         assertEq(_acceptedToken, cryptoFundMe.ETHER_ADDRESS(), "Token address should be set to Ether address");
-        assertEq(_targetAmount, targetAmount, "The campaign's target amount was set as expected");
-        assertEq(_deadline, deadline, "The campaign's deadline was set as expected");
-        assertEq(_title, title, "The campaign's title was set as expected");
-        assertEq(_description, description, "The campaign's description was set as expected");
-        assertEq(_image, image, "The campaign's image was set as expected");
+        assertEq(_targetAmount, targetAmount, "The campaign's target amount was not set as expected");
+        assertEq(_deadline, deadline, "The campaign's deadline was not set as expected");
+        assertEq(_title, title, "The campaign's title was not set as expected");
+        assertEq(_description, description, "The campaign's description was not set as expected");
+        assertEq(_image, image, "The campaign's image was not set as expected");
     }
 
     function testCreateCampaignERC20(
@@ -113,13 +114,13 @@ contract CryptoFundMeTest is Test {
             string memory _image
         ) = cryptoFundMe.campaigns(campaignId);
 
-        assertEq(_creator, address(this), "The campaign's owner was set as expected");
+        assertEq(_creator, address(this), "The campaign's owner was not set as expected");
         assertEq(_acceptedToken, address(erc20Mock), "Token address should be set to Ether address");
-        assertEq(_targetAmount, targetAmount, "The campaign's target amount was set as expected");
-        assertEq(_deadline, deadline, "The campaign's deadline was set as expected");
-        assertEq(_title, title, "The campaign's title was set as expected");
-        assertEq(_description, description, "The campaign's description was set as expected");
-        assertEq(_image, image, "The campaign's image was set as expected");
+        assertEq(_targetAmount, targetAmount, "The campaign's target amount was not set as expected");
+        assertEq(_deadline, deadline, "The campaign's deadline was not set as expected");
+        assertEq(_title, title, "The campaign's title was not set as expected");
+        assertEq(_description, description, "The campaign's description was not set as expected");
+        assertEq(_image, image, "The campaign's image was not set as expected");
     }
 
     function testCreateCampaignRevertWhenDeadlineHasPassed(
@@ -961,6 +962,70 @@ contract CryptoFundMeTest is Test {
         vm.expectRevert(Unauthorized.selector);
 
         cryptoFundMe.setChangeFee(newChangeFee);
+    }
+
+    function testRemoveCampaign(
+        string memory title,
+        string memory description,
+        uint256 targetAmount,
+        uint256 deadline,
+        string memory image,
+        string calldata reason
+    ) external {
+        vm.assume(deadline > block.timestamp);
+        vm.assume(targetAmount > 0);
+
+        uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
+
+        vm.expectEmit(true, true, true, true);
+
+        emit CampaignRemoved(campaignId, reason);
+
+        cryptoFundMe.removeCampaign(campaignId, reason);
+
+        (
+            address _creator,
+            address _acceptedToken,
+            uint256 _targetAmount,
+            uint256 _deadline,
+            uint256 _amountCollected,
+            string memory _title,
+            string memory _description,
+            string memory _image
+        ) = cryptoFundMe.campaigns(campaignId);
+
+        assertEq(_creator, address(0), "The campaign's owner was not reset as expected");
+        assertEq(_acceptedToken, address(0), "Token address should be set to Ether address");
+        assertEq(_targetAmount, 0, "The campaign's target amount was not reset as expected");
+        assertEq(_deadline, 0, "The campaign's deadline was not reset as expected");
+        assertEq(_amountCollected, 0, "The campaign's amount collected was not reset as expected");
+        assertEq(_title, "", "The campaign's title was not reset as expected");
+        assertEq(_description, "", "The campaign's description was not reset as expected");
+        assertEq(_image, "", "The campaign's image was not reset as expected");
+    }
+
+    function testRemoveCampaignRevertWhenNotOwner(
+        string memory title,
+        string memory description,
+        uint256 targetAmount,
+        uint256 deadline,
+        string memory image,
+        address notOwner,
+        string memory reason
+    ) external {
+        vm.assume(deadline > block.timestamp);
+        vm.assume(targetAmount > 0);
+        vm.assume(notOwner != address(this));
+
+        vm.startPrank(notOwner);
+
+        uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
+
+        vm.expectRevert(Unauthorized.selector);
+
+        cryptoFundMe.removeCampaign(campaignId, reason);
+
+        vm.stopPrank();
     }
 
     receive() external payable { }

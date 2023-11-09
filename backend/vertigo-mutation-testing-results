@@ -1,11 +1,11 @@
 Mutation testing report:
-Number of mutations:    25
-Killed:                 25 / 25
+Number of mutations:    27
+Killed:                 27 / 27
 
 Mutations:
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 195
+    Line nr: 217
     Result: Killed
     Original line:
                  if (_targetAmount == 0) {
@@ -16,7 +16,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 328
+    Line nr: 350
     Result: Killed
     Original line:
                  for (uint256 i = 0; i < _numberOfCampaigns;) {
@@ -27,7 +27,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 102
+    Line nr: 108
     Result: Killed
     Original line:
                  if (block.timestamp >= campaigns[_id].deadline) {
@@ -38,7 +38,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 111
+    Line nr: 117
     Result: Killed
     Original line:
                  if (campaigns[_id].amountCollected >= campaigns[_id].targetAmount) {
@@ -49,7 +49,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 128
+    Line nr: 134
     Result: Killed
     Original line:
                  if (campaigns[_id].creator != msg.sender) {
@@ -60,7 +60,18 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 187
+    Line nr: 150
+    Result: Killed
+    Original line:
+                 if (owner != msg.sender) {
+
+    Mutated line:
+                 if (owner == msg.sender) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 209
     Result: Killed
     Original line:
                  if (block.timestamp >= _deadline) {
@@ -71,7 +82,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 195
+    Line nr: 217
     Result: Killed
     Original line:
                  if (_targetAmount == 0) {
@@ -82,7 +93,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 283
+    Line nr: 305
     Result: Killed
     Original line:
                  if (campaign.acceptedToken != address(_token)) {
@@ -93,7 +104,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 328
+    Line nr: 350
     Result: Killed
     Original line:
                  for (uint256 i = 0; i < _numberOfCampaigns;) {
@@ -104,7 +115,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 351
+    Line nr: 373
     Result: Killed
     Original line:
                  if (msg.value != changeFee) {
@@ -115,7 +126,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 392
+    Line nr: 414
     Result: Killed
     Original line:
                  if (msg.value != changeFee) {
@@ -126,29 +137,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 422
-    Result: Killed
-    Original line:
-                 if (owner != msg.sender) {
-
-    Mutated line:
-                 if (owner == msg.sender) {
-
-
-Mutation:
-    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 439
-    Result: Killed
-    Original line:
-                 if (owner != msg.sender) {
-
-    Mutated line:
-                 if (owner == msg.sender) {
-
-
-Mutation:
-    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 220
+    Line nr: 242
     Result: Killed
     Original line:
                      numberOfCampaigns = _numberOfCampaigns + 1;
@@ -159,7 +148,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 222
+    Line nr: 244
     Result: Killed
     Original line:
                      return numberOfCampaigns - 1;
@@ -170,7 +159,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 239
+    Line nr: 261
     Result: Killed
     Original line:
                  campaign.amountCollected = campaign.amountCollected + netDonationAmount;
@@ -181,7 +170,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 265
+    Line nr: 287
     Result: Killed
     Original line:
                  return donations[_id].length - 1;
@@ -192,7 +181,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 298
+    Line nr: 320
     Result: Killed
     Original line:
                  campaign.amountCollected = campaign.amountCollected + netDonationAmount;
@@ -203,7 +192,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 308
+    Line nr: 330
     Result: Killed
     Original line:
                  return donations[_id].length - 1;
@@ -214,7 +203,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 231
+    Line nr: 253
     Result: Killed
     Original line:
              function donateEtherToCampaign(uint256 _id) external payable campaignIsActive(_id) returns (uint256 donationId) {
@@ -225,7 +214,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 277
+    Line nr: 299
     Result: Killed
     Original line:
                  campaignIsActive(_id)
@@ -236,7 +225,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 347
+    Line nr: 369
     Result: Killed
     Original line:
                  campaignIsActive(_id)
@@ -247,7 +236,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 348
+    Line nr: 370
     Result: Killed
     Original line:
                  onlyCreator(_id)
@@ -258,7 +247,7 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 388
+    Line nr: 410
     Result: Killed
     Original line:
                  campaignIsActive(_id)
@@ -269,12 +258,45 @@ Mutation:
 
 Mutation:
     File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
-    Line nr: 389
+    Line nr: 411
     Result: Killed
     Original line:
                  onlyCreator(_id)
 
     Mutated line:
                  
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 443
+    Result: Killed
+    Original line:
+             function setChangeFee(uint256 _changeFee) external onlyOwner {
+
+    Mutated line:
+             function setChangeFee(uint256 _changeFee) external  {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 451
+    Result: Killed
+    Original line:
+             function setFeeTo(address _feeTo) external onlyOwner {
+
+    Mutated line:
+             function setFeeTo(address _feeTo) external  {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 459
+    Result: Killed
+    Original line:
+             function removeCampaign(uint256 _id, string calldata reason) external payable onlyOwner {
+
+    Mutated line:
+             function removeCampaign(uint256 _id, string calldata reason) external payable  {
 
 

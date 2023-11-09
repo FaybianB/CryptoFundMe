@@ -36,6 +36,12 @@ event DeadlineChanged(address indexed creator, uint256 indexed campaignId, strin
  */
 event TargetAmountChanged(address indexed creator, uint256 indexed campaignId, string reason);
 
+/**
+ * @dev Emitted when the campaign is removed
+ * @param campaignId The ID of the campaign that was removed
+ */
+event CampaignRemoved(uint256 indexed campaignId, string reason);
+
 error CampaignEnded();
 
 error CampaignGoalReached();
@@ -90,7 +96,7 @@ contract CryptoFundMe {
     UD60x18 public immutable DONATION_PERCENTAGE_FEE = ud(0.05e18);
 
     address public constant ETHER_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address owner;
+    address immutable owner;
     // The address to which fees are sent
     address payable feeTo;
 
@@ -139,6 +145,22 @@ contract CryptoFundMe {
     }
 
     /**
+     * @dev Modifier to check if the sender is the contract owner
+     */
+    modifier onlyOwner() {
+        if (owner != msg.sender) {
+            assembly {
+                // `Unauthorized()`
+                mstore(0x00, 0x82b42900)
+
+                revert(0x1c, 0x04)
+            }
+        }
+
+        _;
+    }
+
+    /**
      * @dev Constructor to set the fee recipient
      * @param _feeTo The address to receive the fee
      */
@@ -157,11 +179,11 @@ contract CryptoFundMe {
      * @return campaignId The ID of the newly created campaign
      */
     function createCampaign(
-        string memory _title,
-        string memory _description,
+        string calldata _title,
+        string calldata _description,
         uint256 _targetAmount,
         uint256 _deadline,
-        string memory _image
+        string calldata _image
     ) external returns (uint256 campaignId) {
         campaignId = createCampaign(ETHER_ADDRESS, _title, _description, _targetAmount, _deadline, _image);
     }
@@ -178,11 +200,11 @@ contract CryptoFundMe {
      */
     function createCampaign(
         address _acceptedToken,
-        string memory _title,
-        string memory _description,
+        string calldata _title,
+        string calldata _description,
         uint256 _targetAmount,
         uint256 _deadline,
-        string memory _image
+        string calldata _image
     ) public returns (uint256 campaignId) {
         // Check if the deadline is in the future
         if (block.timestamp >= _deadline) {
@@ -342,7 +364,7 @@ contract CryptoFundMe {
      * @param _newDeadline The new deadline for the campaign
      * @param _reason The reason for changing the deadline
      */
-    function changeDeadline(uint256 _id, uint256 _newDeadline, string memory _reason)
+    function changeDeadline(uint256 _id, uint256 _newDeadline, string calldata _reason)
         external
         payable
         campaignIsActive(_id)
@@ -383,7 +405,7 @@ contract CryptoFundMe {
      * @param _newTargetAmount The new target amount for the campaign
      * @param _reason The reason for changing the target amount
      */
-    function changeTargetAmount(uint256 _id, uint256 _newTargetAmount, string memory _reason)
+    function changeTargetAmount(uint256 _id, uint256 _newTargetAmount, string calldata _reason)
         external
         payable
         campaignIsActive(_id)
@@ -419,16 +441,7 @@ contract CryptoFundMe {
      * @dev Function to set the change fee
      * @param _changeFee The new change fee
      */
-    function setChangeFee(uint256 _changeFee) external {
-        if (owner != msg.sender) {
-            assembly {
-                // `Unauthorized()`
-                mstore(0x00, 0x82b42900)
-
-                revert(0x1c, 0x04)
-            }
-        }
-
+    function setChangeFee(uint256 _changeFee) external onlyOwner {
         changeFee = _changeFee;
     }
 
@@ -436,17 +449,18 @@ contract CryptoFundMe {
      * @dev Function to set the fee recipient
      * @param _feeTo The new fee recipient
      */
-    function setFeeTo(address _feeTo) external {
-        if (owner != msg.sender) {
-            assembly {
-                // `Unauthorized()`
-                mstore(0x00, 0x82b42900)
-
-                revert(0x1c, 0x04)
-            }
-        }
-
+    function setFeeTo(address _feeTo) external onlyOwner {
         feeTo = payable(_feeTo);
+    }
+
+    /**
+     * @dev Function to change the deadline of a campaign
+     * @param _id The ID of the campaign
+     */
+    function removeCampaign(uint256 _id, string calldata reason) external payable onlyOwner {
+        delete campaigns[_id];
+
+        emit CampaignRemoved(_id, reason);
     }
 
     /**
