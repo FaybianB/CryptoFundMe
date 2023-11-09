@@ -1,47 +1,40 @@
-## Getting Started
+# CryptoFundMe
 
-Create a project using this example:
+CryptoFundMe is a smart contract for creating and managing crowdfunding campaigns on the Ethereum blockchain. It allows campaign creators to receive donations in either ETH or specific ERC20 tokens and provides features to manage campaigns effectively.
 
-```bash
-npx thirdweb create --contract --template forge-starter
-```
+**Contract Address (Sepolia)**: 0xcB12466e687a29DAF18926f35042384fdB81Da35
 
-You can start editing the page by modifying `contracts/Contract.sol`.
+## Features
+**Campaign Creation**: Users can create campaigns for fundraising, specifying details such as the title, description, target amount, deadline, and an image.
 
-To add functionality to your contracts, you can use the `@thirdweb-dev/contracts` package which provides base contracts and extensions to inherit. The package is already installed with this project. Head to our [Contracts Extensions Docs](https://portal.thirdweb.com/thirdweb-deploy/contract-extensions) to learn more.
+**ETH and ERC20 Support**: The contract supports campaigns that accept either ETH or a specified ERC20 token as donations.
 
-## Building the project
+**Safe Donation Handling**: Utilizes OpenZeppelin's SafeERC20 library to securely handle ERC20 token transfers, helping to prevent common issues with token transfers.
 
-After any changes to the contract, run:
+**Fixed-Point Arithmetic**: Integrates with prb-math library's UD60x18 type for precise fixed-point arithmetic, ensuring that calculations are accurate and overflow-safe.
 
-```bash
-npm run build
-# or
-yarn build
-```
+**Custom Events**: Emits events for key actions, including campaign creation, donations, and administrative changes like deadline and target amount adjustments.
 
-to compile your contracts. This will also detect the [Contracts Extensions Docs](https://portal.thirdweb.com/thirdweb-deploy/contract-extensions) detected on your contract.
+**Change Fees**: Campaign creators can change the deadline or target amount of their campaign by paying a change fee.
 
-## Deploying Contracts
+**D*onation Fees**: A fee is deducted from each donation, with the rate set in the contract, and is sent to a specified fee recipient address.
 
-When you're ready to deploy your contracts, just run one of the following command to deploy you're contracts:
+**Owner Privileges**: The contract owner can set the change fee, designate the fee recipient, and remove campaigns.
 
-```bash
-npm run deploy
-# or
-yarn deploy
-```
+**Modifiers for Validation**: Includes modifiers to ensure that campaigns are active, the sender is the campaign creator, and the sender is the contract owner for respective functions.
 
-## Releasing Contracts
+**Campaign and Donation Tracking**: Stores and retrieves campaign details and donations, allowing for transparent tracking of funds raised.
 
-If you want to release a version of your contracts publicly, you can use one of the followings command:
+**Error Handling**: Custom errors are defined for various failure cases, such as ended campaigns, goal reached, unauthorized actions, and failed transactions.
 
-```bash
-npm run release
-# or
-yarn release
-```
+## Testing
 
-## Join our Discord!
+This test suite features 100% line, statement, branch and function coverage.
 
-For any questions, suggestions, join our discord at [https://discord.gg/thirdweb](https://discord.gg/thirdweb).
+Result from `forge coverage`:
+
+![Test Coverage](media/coverage.png)
+
+To run the Foundry test suite, run:
+
+`forge test`
