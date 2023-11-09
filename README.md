@@ -26,13 +26,3 @@ CryptoFundMe is a smart contract for creating and managing crowdfunding campaign
 **Campaign and Donation Tracking**: Stores and retrieves campaign details and donations, allowing for transparent tracking of funds raised.
 
 **Error Handling**: Custom errors are defined for various failure cases, such as ended campaigns, goal reached, unauthorized actions, and failed transactions.
-
-## Testing
-
-This test suite features 100% line, statement, branch and function coverage
-
-![Test Coverage](media/coverage.png)
-
-To run the Foundry test suite, run:
-
-`forge test`
