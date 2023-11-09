@@ -1,0 +1,280 @@
+Mutation testing report:
+Number of mutations:    25
+Killed:                 25 / 25
+
+Mutations:
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 195
+    Result: Killed
+    Original line:
+                 if (_targetAmount == 0) {
+
+    Mutated line:
+                 if (_targetAmount != 0) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 328
+    Result: Killed
+    Original line:
+                 for (uint256 i = 0; i < _numberOfCampaigns;) {
+
+    Mutated line:
+                 for (uint256 i = 0; i <= _numberOfCampaigns;) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 102
+    Result: Killed
+    Original line:
+                 if (block.timestamp >= campaigns[_id].deadline) {
+
+    Mutated line:
+                 if (block.timestamp < campaigns[_id].deadline) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 111
+    Result: Killed
+    Original line:
+                 if (campaigns[_id].amountCollected >= campaigns[_id].targetAmount) {
+
+    Mutated line:
+                 if (campaigns[_id].amountCollected < campaigns[_id].targetAmount) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 128
+    Result: Killed
+    Original line:
+                 if (campaigns[_id].creator != msg.sender) {
+
+    Mutated line:
+                 if (campaigns[_id].creator == msg.sender) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 187
+    Result: Killed
+    Original line:
+                 if (block.timestamp >= _deadline) {
+
+    Mutated line:
+                 if (block.timestamp < _deadline) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 195
+    Result: Killed
+    Original line:
+                 if (_targetAmount == 0) {
+
+    Mutated line:
+                 if (_targetAmount != 0) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 283
+    Result: Killed
+    Original line:
+                 if (campaign.acceptedToken != address(_token)) {
+
+    Mutated line:
+                 if (campaign.acceptedToken == address(_token)) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 328
+    Result: Killed
+    Original line:
+                 for (uint256 i = 0; i < _numberOfCampaigns;) {
+
+    Mutated line:
+                 for (uint256 i = 0; i >= _numberOfCampaigns;) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 351
+    Result: Killed
+    Original line:
+                 if (msg.value != changeFee) {
+
+    Mutated line:
+                 if (msg.value == changeFee) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 392
+    Result: Killed
+    Original line:
+                 if (msg.value != changeFee) {
+
+    Mutated line:
+                 if (msg.value == changeFee) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 422
+    Result: Killed
+    Original line:
+                 if (owner != msg.sender) {
+
+    Mutated line:
+                 if (owner == msg.sender) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 439
+    Result: Killed
+    Original line:
+                 if (owner != msg.sender) {
+
+    Mutated line:
+                 if (owner == msg.sender) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 220
+    Result: Killed
+    Original line:
+                     numberOfCampaigns = _numberOfCampaigns + 1;
+
+    Mutated line:
+                     numberOfCampaigns = _numberOfCampaigns - 1;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 222
+    Result: Killed
+    Original line:
+                     return numberOfCampaigns - 1;
+
+    Mutated line:
+                     return numberOfCampaigns + 1;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 239
+    Result: Killed
+    Original line:
+                 campaign.amountCollected = campaign.amountCollected + netDonationAmount;
+
+    Mutated line:
+                 campaign.amountCollected = campaign.amountCollected - netDonationAmount;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 265
+    Result: Killed
+    Original line:
+                 return donations[_id].length - 1;
+
+    Mutated line:
+                 return donations[_id].length + 1;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 298
+    Result: Killed
+    Original line:
+                 campaign.amountCollected = campaign.amountCollected + netDonationAmount;
+
+    Mutated line:
+                 campaign.amountCollected = campaign.amountCollected - netDonationAmount;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 308
+    Result: Killed
+    Original line:
+                 return donations[_id].length - 1;
+
+    Mutated line:
+                 return donations[_id].length + 1;
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 231
+    Result: Killed
+    Original line:
+             function donateEtherToCampaign(uint256 _id) external payable campaignIsActive(_id) returns (uint256 donationId) {
+
+    Mutated line:
+             function donateEtherToCampaign(uint256 _id) external payable  returns (uint256 donationId) {
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 277
+    Result: Killed
+    Original line:
+                 campaignIsActive(_id)
+
+    Mutated line:
+                 
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 347
+    Result: Killed
+    Original line:
+                 campaignIsActive(_id)
+
+    Mutated line:
+                 
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 348
+    Result: Killed
+    Original line:
+                 onlyCreator(_id)
+
+    Mutated line:
+                 
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 388
+    Result: Killed
+    Original line:
+                 campaignIsActive(_id)
+
+    Mutated line:
+                 
+
+
+Mutation:
+    File: /Users/ugongetthisword/Miscellaneous/CryptoFundMe/backend/src/CryptoFundMe.sol
+    Line nr: 389
+    Result: Killed
+    Original line:
+                 onlyCreator(_id)
+
+    Mutated line:
+                 
+
+
