@@ -36,6 +36,24 @@ event DeadlineChanged(address indexed creator, uint256 indexed campaignId, strin
  */
 event TargetAmountChanged(address indexed creator, uint256 indexed campaignId, string reason);
 
+error CampaignEnded();
+
+error CampaignGoalReached();
+
+error Unauthorized();
+
+error SendFeeFailed();
+
+error IncorrectChangeFeeAmountSent();
+
+error UnacceptableToken();
+
+error DeadlineNotInFuture();
+
+error InvalidTargetAmount();
+
+error DonationFailed();
+
 /**
  * @title CryptoFundMe
  * @dev A contract for crowdfunding campaigns
@@ -59,7 +77,9 @@ contract CryptoFundMe {
         string image;
     }
 
+    // Mapping to store campaigns by their ID
     mapping(uint256 campaignId => Campaign) public campaigns;
+    // Mapping to store donations by their campaign ID
     mapping(uint256 campaignId => Donation[]) public donations;
 
     uint256 public numberOfCampaigns = 0;
@@ -71,6 +91,7 @@ contract CryptoFundMe {
 
     address public constant ETHER_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address owner;
+    // The address to which fees are sent
     address payable feeTo;
 
     /**
@@ -78,8 +99,24 @@ contract CryptoFundMe {
      * @param _id The ID of the campaign
      */
     modifier campaignIsActive(uint256 _id) {
-        require(campaigns[_id].deadline > block.timestamp, "The campaign has ended");
-        require(campaigns[_id].targetAmount > campaigns[_id].amountCollected, "The campaign has reached it's goal");
+        // Check if the campaign's deadline is passed
+        if (block.timestamp >= campaigns[_id].deadline) {
+            assembly {
+                // `CampaignEnded()`
+                mstore(0x00, 0x553ae054)
+
+                revert(0x1c, 0x04)
+            }
+        }
+        // Check if the campaign target amount has been collected
+        if (campaigns[_id].amountCollected >= campaigns[_id].targetAmount) {
+            assembly {
+                // `CampaignGoalReached()`
+                mstore(0x00, 0x653fd1bd)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         _;
     }
@@ -89,7 +126,14 @@ contract CryptoFundMe {
      * @param _id The ID of the campaign
      */
     modifier onlyCreator(uint256 _id) {
-        require(campaigns[_id].creator == msg.sender, "Only campaign creator can execute this action");
+        if (campaigns[_id].creator != msg.sender) {
+            assembly {
+                // `Unauthorized()`
+                mstore(0x00, 0x82b42900)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         _;
     }
@@ -140,8 +184,23 @@ contract CryptoFundMe {
         uint256 _deadline,
         string memory _image
     ) public returns (uint256 campaignId) {
-        require(_deadline > block.timestamp, "The deadline should be a date in the future");
-        require(_targetAmount > 0, "The target amount should be greater than 0");
+        // Check if the deadline is in the future
+        if (block.timestamp >= _deadline) {
+            assembly {
+                // `DeadlineNotInFuture()`
+                mstore(0x00, 0x9e8ed6ff)
+
+                revert(0x1c, 0x04)
+            }
+        }
+        if (_targetAmount == 0) {
+            assembly {
+                // `InvalidTargetAmount()`
+                mstore(0x00, 0x9af67016)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         Campaign memory campaign = Campaign({
             creator: msg.sender,
@@ -153,12 +212,15 @@ contract CryptoFundMe {
             amountCollected: 0,
             image: _image
         });
-        campaigns[numberOfCampaigns] = campaign;
+        uint256 _numberOfCampaigns = numberOfCampaigns;
+        campaigns[_numberOfCampaigns] = campaign;
 
-        emit CampaignCreated(campaign.creator, numberOfCampaigns);
+        emit CampaignCreated(campaign.creator, _numberOfCampaigns);
 
         unchecked {
-            return numberOfCampaigns++;
+            numberOfCampaigns = _numberOfCampaigns + 1;
+
+            return numberOfCampaigns - 1;
         }
     }
 
@@ -168,8 +230,6 @@ contract CryptoFundMe {
      * @return donationId The ID of the donation
      */
     function donateEtherToCampaign(uint256 _id) external payable campaignIsActive(_id) returns (uint256 donationId) {
-        require(msg.value > 0, "No Ether sent for donation");
-
         UD60x18 donationAmount = ud(msg.value);
         Campaign storage campaign = campaigns[_id];
         UD60x18 feeAmount = calculateFee(donationAmount);
@@ -180,14 +240,29 @@ contract CryptoFundMe {
         campaign.amountCollected = campaign.amountCollected + netDonationAmount;
         (bool feeSent,) = feeTo.call{ value: unwrap(feeAmount) }("");
 
-        require(feeSent, "Failed to send fee");
+        if (!feeSent) {
+            assembly {
+                // `SendFeeFailed()`
+                mstore(0x00, 0xce3ef892)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         (bool donationSent,) = payable(campaign.creator).call{ value: netDonationAmount }("");
 
-        require(donationSent, "Failed to send donation to campaign creator");
+        if (!donationSent) {
+            assembly {
+                // `DonationFailed()`
+                mstore(0x00, 0x77f4312b)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         emit Donated(msg.sender, _id, netDonationAmount);
 
+        // Return the ID of the donation
         return donations[_id].length - 1;
     }
 
@@ -203,24 +278,34 @@ contract CryptoFundMe {
         campaignIsActive(_id)
         returns (uint256 donationId)
     {
-        require(
-            campaigns[_id].acceptedToken == address(_token), "This campaign does not accept donations of this token"
-        );
+        Campaign storage campaign = campaigns[_id];
+
+        // Check if the token being donated is accepted by the campaign
+        if (campaign.acceptedToken != address(_token)) {
+            assembly {
+                // `DonationFailed()`
+                mstore(0x00, 0xbb262571)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         UD60x18 donationAmount = ud(_amount);
         UD60x18 feeAmount = calculateFee(donationAmount);
         uint256 netDonationAmount = coverFee ? unwrap(donationAmount) : unwrap(donationAmount.sub(feeAmount));
-        Campaign storage campaign = campaigns[_id];
 
         donations[_id].push(Donation({ donator: msg.sender, donationAmount: netDonationAmount }));
 
         campaign.amountCollected = campaign.amountCollected + netDonationAmount;
 
+        // Transfer the fee from the donator to the fee recipient
         _token.safeTransferFrom(msg.sender, feeTo, unwrap(feeAmount));
+        // Transfer the donation from the donator to the campaign creator
         _token.safeTransferFrom(msg.sender, campaign.creator, netDonationAmount);
 
         emit Donated(msg.sender, _id, netDonationAmount);
 
+        // Return the ID of the donation
         return donations[_id].length - 1;
     }
 
@@ -238,11 +323,16 @@ contract CryptoFundMe {
      * @return allCampaigns An array of all campaigns
      */
     function getCampaigns() external view returns (Campaign[] memory allCampaigns) {
-        allCampaigns = new Campaign[](numberOfCampaigns);
+        uint256 _numberOfCampaigns = numberOfCampaigns;
+        allCampaigns = new Campaign[](_numberOfCampaigns);
 
-        for (uint256 i = 0; i < numberOfCampaigns; ++i) {
+        for (uint256 i = 0; i < _numberOfCampaigns;) {
             Campaign memory campaign = campaigns[i];
             allCampaigns[i] = campaign;
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -258,12 +348,30 @@ contract CryptoFundMe {
         campaignIsActive(_id)
         onlyCreator(_id)
     {
-        require(msg.value == changeFee, "Incorrect change fee amount sent");
+        // Check if the correct change fee was sent
+        if (msg.value != changeFee) {
+            assembly {
+                // `IncorrectChangeFeeAmountSent()`
+                mstore(0x00, 0xfa2ed793)
 
+                revert(0x1c, 0x04)
+            }
+        }
+
+        // Send the change fee to the fee recipient
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
-        require(sent, "Failed to send fee");
+        // Check if the fee was sent successfully
+        if (!sent) {
+            assembly {
+                // `SendFeeFailed()`
+                mstore(0x00, 0xce3ef892)
 
+                revert(0x1c, 0x04)
+            }
+        }
+
+        // Update the deadline for the campaign
         campaigns[_id].deadline = _newDeadline;
 
         emit DeadlineChanged(msg.sender, _id, _reason);
@@ -281,11 +389,26 @@ contract CryptoFundMe {
         campaignIsActive(_id)
         onlyCreator(_id)
     {
-        require(msg.value == changeFee, "Incorrect change fee amount sent");
+        // Check if the correct change fee was sent
+        if (msg.value != changeFee) {
+            assembly {
+                // `IncorrectChangeFeeAmountSent()`
+                mstore(0x00, 0xfa2ed793)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         (bool sent,) = feeTo.call{ value: msg.value }("");
 
-        require(sent, "Failed to send fee");
+        if (!sent) {
+            assembly {
+                // `SendFeeFailed()`
+                mstore(0x00, 0xce3ef892)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         campaigns[_id].targetAmount = _newTargetAmount;
 
@@ -297,7 +420,14 @@ contract CryptoFundMe {
      * @param _changeFee The new change fee
      */
     function setChangeFee(uint256 _changeFee) external {
-        require(owner == msg.sender, "Only owner can set the fee to address");
+        if (owner != msg.sender) {
+            assembly {
+                // `Unauthorized()`
+                mstore(0x00, 0x82b42900)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         changeFee = _changeFee;
     }
@@ -307,7 +437,14 @@ contract CryptoFundMe {
      * @param _feeTo The new fee recipient
      */
     function setFeeTo(address _feeTo) external {
-        require(owner == msg.sender, "Only owner can set the fee to address");
+        if (owner != msg.sender) {
+            assembly {
+                // `Unauthorized()`
+                mstore(0x00, 0x82b42900)
+
+                revert(0x1c, 0x04)
+            }
+        }
 
         feeTo = payable(_feeTo);
     }

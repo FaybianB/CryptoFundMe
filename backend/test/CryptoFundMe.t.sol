@@ -2,7 +2,22 @@
 pragma solidity 0.8.22;
 
 import { Test } from "forge-std/Test.sol";
-import { CryptoFundMe, CampaignCreated, Donated, DeadlineChanged, TargetAmountChanged } from "../src/CryptoFundMe.sol";
+import {
+    CryptoFundMe,
+    CampaignCreated,
+    Donated,
+    DeadlineChanged,
+    TargetAmountChanged,
+    CampaignEnded,
+    CampaignGoalReached,
+    Unauthorized,
+    SendFeeFailed,
+    IncorrectChangeFeeAmountSent,
+    UnacceptableToken,
+    DeadlineNotInFuture,
+    InvalidTargetAmount,
+    DonationFailed
+} from "../src/CryptoFundMe.sol";
 import { UD60x18, ud, unwrap } from "@prb/math/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { EtherReceiverMock } from "@openzeppelin/contracts/mocks/EtherReceiverMock.sol";
@@ -117,7 +132,7 @@ contract CryptoFundMeTest is Test {
         vm.assume(deadline <= block.timestamp);
         vm.assume(targetAmount > 0);
 
-        vm.expectRevert("The deadline should be a date in the future");
+        vm.expectRevert(DeadlineNotInFuture.selector);
 
         cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
     }
@@ -132,7 +147,7 @@ contract CryptoFundMeTest is Test {
         vm.assume(deadline > block.timestamp);
         vm.assume(targetAmount == 0);
 
-        vm.expectRevert("The target amount should be greater than 0");
+        vm.expectRevert(InvalidTargetAmount.selector);
 
         cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
     }
@@ -201,24 +216,6 @@ contract CryptoFundMeTest is Test {
         assertEq(amountDonated, netDonationAmount, "Donation amount was not stored correctly");
     }
 
-    function testDonateEtherToCampaignRevertWhenNoEtherSent(
-        string memory title,
-        string memory description,
-        uint256 targetAmount,
-        uint256 deadline,
-        string memory image
-    ) external {
-        vm.assume(deadline > block.timestamp);
-        vm.assume(targetAmount > 0);
-
-        uint256 donationAmount = 0;
-        uint256 campaignId = cryptoFundMe.createCampaign(title, description, targetAmount, deadline, image);
-
-        vm.expectRevert("No Ether sent for donation");
-
-        cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
-    }
-
     function testDonateEtherToCampaignRevertWhenCampaignDeadlinePassed(
         string memory title,
         string memory description,
@@ -237,7 +234,7 @@ contract CryptoFundMeTest is Test {
 
         vm.warp(deadline);
 
-        vm.expectRevert("The campaign has ended");
+        vm.expectRevert(CampaignEnded.selector);
 
         cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
 
@@ -264,7 +261,7 @@ contract CryptoFundMeTest is Test {
 
         cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
 
-        vm.expectRevert("The campaign has reached it's goal");
+        vm.expectRevert(CampaignGoalReached.selector);
 
         cryptoFundMe.donateEtherToCampaign{ value: 1 }(campaignId);
 
@@ -289,7 +286,7 @@ contract CryptoFundMeTest is Test {
 
         hoax(DONATOR, donationAmount);
 
-        vm.expectRevert("Failed to send fee");
+        vm.expectRevert(SendFeeFailed.selector);
 
         cryptoFundMe.donateEtherToCampaign{ value: 1 }(campaignId);
     }
@@ -316,7 +313,7 @@ contract CryptoFundMeTest is Test {
 
         hoax(DONATOR, donationAmount);
 
-        vm.expectRevert("Failed to send donation to campaign creator");
+        vm.expectRevert(DonationFailed.selector);
 
         cryptoFundMe.donateEtherToCampaign{ value: 1 }(campaignId);
     }
@@ -459,7 +456,7 @@ contract CryptoFundMeTest is Test {
         uint256 campaignId =
             cryptoFundMe.createCampaign(address(erc20Mock), title, description, targetAmount, deadline, image);
 
-        vm.expectRevert("This campaign does not accept donations of this token");
+        vm.expectRevert(UnacceptableToken.selector);
 
         cryptoFundMe.donateERC20ToCampaign(campaignId, IERC20(tokenAddress), donationAmount, coverFee);
     }
@@ -482,7 +479,7 @@ contract CryptoFundMeTest is Test {
 
         vm.warp(deadline);
 
-        vm.expectRevert("The campaign has ended");
+        vm.expectRevert(CampaignEnded.selector);
 
         cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
     }
@@ -514,7 +511,7 @@ contract CryptoFundMeTest is Test {
 
         cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, donationAmount, coverFee);
 
-        vm.expectRevert("The campaign has reached it's goal");
+        vm.expectRevert(CampaignGoalReached.selector);
 
         cryptoFundMe.donateERC20ToCampaign(campaignId, erc20Mock, 1, coverFee);
 
@@ -689,7 +686,7 @@ contract CryptoFundMeTest is Test {
 
         vm.warp(deadline);
 
-        vm.expectRevert("The campaign has ended");
+        vm.expectRevert(CampaignEnded.selector);
 
         cryptoFundMe.changeDeadline{ value: changeFee }(campaignId, newDeadline, reason);
     }
@@ -718,7 +715,7 @@ contract CryptoFundMeTest is Test {
 
         cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
 
-        vm.expectRevert("The campaign has reached it's goal");
+        vm.expectRevert(CampaignGoalReached.selector);
 
         cryptoFundMe.changeDeadline{ value: changeFee }(campaignId, newDeadline, reason);
     }
@@ -742,7 +739,7 @@ contract CryptoFundMeTest is Test {
 
         startHoax(notCreator, changeFee);
 
-        vm.expectRevert("Only campaign creator can execute this action");
+        vm.expectRevert(Unauthorized.selector);
 
         cryptoFundMe.changeDeadline{ value: changeFee }(campaignId, newDeadline, reason);
     }
@@ -767,7 +764,7 @@ contract CryptoFundMeTest is Test {
 
         vm.deal(address(this), incorrectChangeFee);
 
-        vm.expectRevert("Incorrect change fee amount sent");
+        vm.expectRevert(IncorrectChangeFeeAmountSent.selector);
 
         cryptoFundMe.changeDeadline{ value: incorrectChangeFee }(campaignId, newDeadline, reason);
     }
@@ -791,7 +788,7 @@ contract CryptoFundMeTest is Test {
 
         EtherReceiverMock(FEE_TO).setAcceptEther(false);
 
-        vm.expectRevert("Failed to send fee");
+        vm.expectRevert(SendFeeFailed.selector);
 
         cryptoFundMe.changeDeadline{ value: changeFee }(campaignId, newDeadline, reason);
     }
@@ -843,7 +840,7 @@ contract CryptoFundMeTest is Test {
 
         vm.warp(deadline);
 
-        vm.expectRevert("The campaign has ended");
+        vm.expectRevert(CampaignEnded.selector);
 
         cryptoFundMe.changeTargetAmount{ value: changeFee }(campaignId, newTargetAmount, reason);
     }
@@ -872,7 +869,7 @@ contract CryptoFundMeTest is Test {
 
         cryptoFundMe.donateEtherToCampaign{ value: donationAmount }(campaignId);
 
-        vm.expectRevert("The campaign has reached it's goal");
+        vm.expectRevert(CampaignGoalReached.selector);
 
         cryptoFundMe.changeTargetAmount{ value: changeFee }(campaignId, newTargetAmount, reason);
     }
@@ -896,7 +893,7 @@ contract CryptoFundMeTest is Test {
 
         startHoax(notCreator, changeFee);
 
-        vm.expectRevert("Only campaign creator can execute this action");
+        vm.expectRevert(Unauthorized.selector);
 
         cryptoFundMe.changeTargetAmount{ value: changeFee }(campaignId, newTargetAmount, reason);
     }
@@ -921,7 +918,7 @@ contract CryptoFundMeTest is Test {
 
         vm.deal(address(this), incorrectChangeFee);
 
-        vm.expectRevert("Incorrect change fee amount sent");
+        vm.expectRevert(IncorrectChangeFeeAmountSent.selector);
 
         cryptoFundMe.changeTargetAmount{ value: incorrectChangeFee }(campaignId, newTargetAmount, reason);
     }
@@ -945,7 +942,7 @@ contract CryptoFundMeTest is Test {
 
         EtherReceiverMock(FEE_TO).setAcceptEther(false);
 
-        vm.expectRevert("Failed to send fee");
+        vm.expectRevert(SendFeeFailed.selector);
 
         cryptoFundMe.changeTargetAmount{ value: changeFee }(campaignId, newTargetAmount, reason);
     }
@@ -961,7 +958,7 @@ contract CryptoFundMeTest is Test {
 
         vm.prank(notOwner);
 
-        vm.expectRevert("Only owner can set the fee to address");
+        vm.expectRevert(Unauthorized.selector);
 
         cryptoFundMe.setChangeFee(newChangeFee);
     }

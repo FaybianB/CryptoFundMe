@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import "forge-std/Test.sol";
 import { CryptoFundMeHarness } from "./harnesses/CryptoFundMeHarness.sol";
+import { CryptoFundMe, Unauthorized } from "../src/CryptoFundMe.sol";
 
 contract CryptoFundMeTestHarness is Test {
     CryptoFundMeHarness cryptoFundMeHarness;
@@ -22,7 +23,7 @@ contract CryptoFundMeTestHarness is Test {
 
         vm.prank(notOwner);
 
-        vm.expectRevert("Only owner can set the fee to address");
+        vm.expectRevert(Unauthorized.selector);
 
         cryptoFundMeHarness.setFeeTo(newFeeTo);
     }
