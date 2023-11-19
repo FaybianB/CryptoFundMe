@@ -6,15 +6,15 @@ Crypto Fund Me is a frontend application built with React for creating and manag
 
 Home Page
 
-![Home Page](public/images/Home.png)
+![Home Page](frontend/public/images/Home.png)
 
 Create Campaign Page
 
-![Home Page](public/images/CreateCampaign.png)
+![Home Page](frontend/public/images/CreateCampaign.png)
 
 Profile Page
 
-![Home Page](public/images/Profile.png)
+![Home Page](frontend/public/images/Profile.png)
 
 **Contract Address (Sepolia)**: 0xcB12466e687a29DAF18926f35042384fdB81Da35
 
