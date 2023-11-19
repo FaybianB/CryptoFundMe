@@ -1,6 +1,20 @@
-# CryptoFundMe
+# Crypto Fund Me
 
-CryptoFundMe is a smart contract for creating and managing crowdfunding campaigns on the Ethereum blockchain. It allows campaign creators to receive donations in either ETH or specific ERC20 tokens and provides features to manage campaigns effectively.
+Crypto Fund Me is a frontend application built with React for creating and managing crowdfunding campaigns on the Ethereum blockchain. It allows campaign creators to receive donations in either ETH or specific ERC20 tokens and provides features to manage campaigns effectively.
+
+## Usage
+
+Home Page
+
+![Home Page](public/images/Home.png)
+
+Create Campaign Page
+
+![Home Page](public/images/CreateCampaign.png)
+
+Profile Page
+
+![Home Page](public/images/Profile.png)
 
 **Contract Address (Sepolia)**: 0xcB12466e687a29DAF18926f35042384fdB81Da35
 
