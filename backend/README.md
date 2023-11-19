@@ -17,7 +17,7 @@ CryptoFundMe is a smart contract for creating and managing crowdfunding campaign
 
 **Change Fees**: Campaign creators can change the deadline or target amount of their campaign by paying a change fee.
 
-**D*onation Fees**: A fee is deducted from each donation, with the rate set in the contract, and is sent to a specified fee recipient address.
+**Donation Fees**: A fee is deducted from each donation, with the rate set in the contract, and is sent to a specified fee recipient address.
 
 **Owner Privileges**: The contract owner can set the change fee, designate the fee recipient, and remove campaigns.
 
