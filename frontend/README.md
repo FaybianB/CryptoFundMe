@@ -1,42 +1,32 @@
-## Getting Started
+# Crypto Fund Me
 
-Create a project using this example:
+## Overview
 
-```bash
-npx thirdweb create --template vite-javascript-starter
-```
+Crypto Fund Me is a frontend application built with React for creating and managing crowdfunding campaigns on the Ethereum blockchain. It allows campaign creators to receive donations in either ETH or specific ERC20 tokens and provides features to manage campaigns effectively.
 
-You can start editing the page by modifying `src/main.jsx`. The page auto-updates as you edit the file.
+## Usage
 
-On `src/index.jsx`, you'll find our `ThirdwebProvider` wrapping your app,
-this is necessary for our [hooks](https://portal.thirdweb.com/react) and
-[UI Components](https://portal.thirdweb.com/ui-components) to work.
+Home Page
 
-## Environment Variables
+![Home Page](public/images/Home.png)
 
-To run this project, you will need to add environment variables. Check the `.env.example` file for all the environment variables required and add it to `.env.local` file or set them up on your hosting provider.
+Create Campaign Page
 
-### Deploy to IPFS
+![Home Page](public/images/CreateCampaign.png)
 
-Deploy a copy of your application to IPFS using the following command:
+Profile Page
 
-```bash
-yarn deploy
-```
+![Home Page](public/images/Profile.png)
 
-## Learn More
+## Technologies Used
 
-To learn more about thirdweb, Vite and React, take a look at the following resources:
+- React
+- Vite
 
-- [thirdweb React Documentation](https://docs.thirdweb.com/react) - learn about our React SDK.
-- [thirdweb JavaScript Documentation](https://docs.thirdweb.com/react) - learn about our JavaScript/TypeScript SDK.
-- [thirdweb Portal](https://docs.thirdweb.com/react) - check our guides and development resources.
-- [Vite Documentation](https://vitejs.dev/guide/) - learn about Vite features.
-- [React documentation](https://reactjs.org/) - learn React.
-- [Templates](https://thirdweb.com/templates)
+## Installation and Setup
 
-You can check out [the thirdweb GitHub organization](https://github.com/thirdweb-dev) - your feedback and contributions are welcome!
+`npm run dev`
 
-## Join our Discord!
+## License
 
-For any questions, suggestions, join our discord at [https://discord.gg/thirdweb](https://discord.gg/thirdweb).
+MIT License

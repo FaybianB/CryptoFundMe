@@ -33,9 +33,7 @@ const CreateCampaign = () => {
         try {
           let campaignId = await createCampaign({ ...form });
 
-          if (typeof campaignId === 'number') {
-            navigate('/');
-          }
+          navigate('/');
         } catch (error) {
           console.log(error);
 

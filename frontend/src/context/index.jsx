@@ -1,6 +1,7 @@
 import React, { useContext, createContext } from 'react';
 import { useAddress, useContract, useMetamask, useContractWrite } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
+import { daysLeft } from '../utils';
 
 const StateContext = createContext();
 
@@ -23,7 +24,7 @@ export const StateContextProvider = ({ children }) => {
         }
     }
 
-    const getCampaigns = async () => {
+    const getCampaigns = async (user) => {
         const campaigns = await contract.call('getCampaigns');
         const parsedCampaigns = campaigns.map((campaign, i) => ({
             creator: campaign.creator,
@@ -36,12 +37,19 @@ export const StateContextProvider = ({ children }) => {
             acceptedToken: campaign.acceptedToken,
             campaignId: i
         }));
+        let activeCampaigns = parsedCampaigns;
 
-        return parsedCampaigns;
+        if (!user) {
+            activeCampaigns = parsedCampaigns.filter((campaign) => campaign.creator !== zeroAddress && daysLeft(campaign.deadline) > 0 && campaign.targetAmount > campaign.amountCollected);
+        }
+
+        activeCampaigns.sort((a, b) => a.deadline - b.deadline);
+
+        return activeCampaigns;
     }
 
     const getUserCampaigns = async () => {
-        const allCampaigns = await getCampaigns();
+        const allCampaigns = await getCampaigns(true);
         const filteredCampaigns = allCampaigns.filter((campaign) => campaign.creator === address);
 
         return filteredCampaigns;

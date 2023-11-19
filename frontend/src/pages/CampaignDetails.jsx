@@ -3,9 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { useStateContext } from '../context';
 import { CustomButton, CountBox, Loader } from '../components';
-import { calculateBarPercentage, daysLeft } from '../utils';
+import { calculateBarPercentage, daysLeft, yearsLeft } from '../utils';
 import { thirdweb } from '../assets';
-import { Ethereum } from '@thirdweb-dev/chains';
 
 const CampaignDetails = () => {
   const { state } = useLocation();

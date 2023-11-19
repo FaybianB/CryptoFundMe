@@ -1,9 +1,16 @@
 export const daysLeft = (deadline) => {
-    console.log(deadline);
-    const difference = new Date(deadline).getTime() - Date.now();
+    const difference = new Date(deadline * 1000).getTime() - Date.now();
     const remainingDays = difference / (1000 * 3600 * 24);
 
     return remainingDays.toFixed(0);
+};
+
+export const yearsLeft = (deadline) => {
+    const difference = new Date(deadline * 1000).getTime() - Date.now();
+    const remainingYears = difference / (1000 * 3600 * 24 * 365);
+
+    console.log(remainingYears);
+    return remainingYears.toFixed(0);
 };
 
 export const calculateBarPercentage = (goal, raisedAmount) => {
